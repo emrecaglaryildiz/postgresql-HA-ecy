@@ -1,0 +1,4 @@
+[postgresql_cluster]
+pg-10 ansible_host=192.168.31.100
+pg-11 ansible_host=192.168.31.101
+pg-12 ansible_host=192.168.31.102
