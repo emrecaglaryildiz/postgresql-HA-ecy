@@ -1,0 +1,100 @@
+---
+- name: PostgreSQL 17 HA Cluster Setup with Patroni
+  hosts: all
+  become: true
+  vars:
+    postgresql_version: "17"
+    postgresql_password: "postgres"
+    replicator_password: "replicator"
+    etcd_version: "3.5.9"
+    patroni_version: "3.1.0"
+
+  tasks:
+    - name: Install required system packages
+      apt:
+        name:
+          - python3-pip
+          - python3-dev
+          - libpq-dev
+          - apt-transport-https
+          - ca-certificates
+        state: present
+        update_cache: yes
+
+    - name: Add PostgreSQL repository
+      apt_repository:
+        repo: "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main"
+        state: present
+
+    - name: Add PostgreSQL signing key
+      apt_key:
+        url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+        state: present
+
+    - name: Install PostgreSQL 17
+      apt:
+        name: 
+          - postgresql-{{ postgresql_version }}
+          - postgresql-contrib-{{ postgresql_version }}
+        state: present
+        update_cache: yes
+
+    - name: Stop PostgreSQL service
+      service:
+        name: postgresql
+        state: stopped
+        enabled: no
+
+    - name: Install etcd
+      apt:
+        name: etcd
+        state: present
+
+    - name: Configure etcd
+      template:
+        src: etcd.conf.j2
+        dest: /etc/default/etcd
+      notify: restart etcd
+
+    - name: Install Patroni and dependencies
+      pip:
+        name:
+          - patroni[postgresql]
+          - psycopg2-binary
+          - python-etcd
+        state: present
+
+    - name: Create Patroni configuration directory
+      file:
+        path: /etc/patroni
+        state: directory
+        mode: '0755'
+
+    - name: Configure Patroni
+      template:
+        src: patroni.yml.j2
+        dest: /etc/patroni/patroni.yml
+        mode: '0644'
+
+    - name: Create Patroni service
+      template:
+        src: patroni.service.j2
+        dest: /etc/systemd/system/patroni.service
+        mode: '0644'
+      notify: reload systemd
+
+  handlers:
+    - name: restart etcd
+      service:
+        name: etcd
+        state: restarted
+
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: start patroni
+      service:
+        name: patroni
+        state: started
+        enabled: yes
