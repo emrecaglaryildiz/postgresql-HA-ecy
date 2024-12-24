@@ -2,7 +2,7 @@
 Postgresql + Etcd + Patroni == HA Postgresql 
 
 
-Ansible ile Postgresql sunucusunu birkaç dosya ve komutla kolayca kurun hemde HA ! 
+Ansible ile Postgresql sunucusunu birkaç dosya ve komutla kolayca kurun hemde HA ! \n
 Easily install Postgresql server with Ansible with a few files and commands and HA !
 
 
